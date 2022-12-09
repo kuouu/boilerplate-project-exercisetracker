@@ -55,7 +55,7 @@ recordRoutes.route('/api/users/:_id/exercises')
     if (isNaN(duration)) return res.json({ error: 'Duration must be a number' })
 
     let date
-    if (req.body.date === '') date = new Date()
+    if (req.body.date === undefined) date = new Date()
     else {
       date = new Date(req.body.date)
       if (isNaN(date))
@@ -80,7 +80,7 @@ recordRoutes.route('/api/users/:_id/exercises')
               return res.status(400).send('Error creating exercise!');
             } else {
               return res.json({
-                _id: result.insertedId,
+                _id: userId,
                 username: user.username,
                 description: description,
                 duration: duration,
@@ -124,7 +124,13 @@ recordRoutes.route('/api/users/:_id/logs')
                 _id: userId,
                 username: user.username,
                 count: result.length,
-                log: result
+                log: result.map(exercise => {
+                  return {
+                    description: exercise.description,
+                    duration: exercise.duration,
+                    date: exercise.date
+                  }
+                })
               })
             }
           });
