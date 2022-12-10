@@ -2,13 +2,6 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const dbo = require('./db');
 
-dbo.connectToServer(function (err) {
-  if (err) {
-    console.error(err);
-    process.exit();
-  }
-});
-
 const recordRoutes = express.Router();
 
 const findUser = (done, userId) => {
@@ -24,7 +17,12 @@ const findUser = (done, userId) => {
 // Create a New User
 recordRoutes.route('/api/users')
   .get((_, res) => {
-    console.log('GET /api/users');
+    dbo.connectToServer(function (err) {
+      if (err) {
+        console.error(err);
+        process.exit();
+      }
+    });
     const dbConnect = dbo.getDb();
     dbConnect
       .collection('users')
