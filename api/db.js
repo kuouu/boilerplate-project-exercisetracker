@@ -22,8 +22,11 @@ module.exports = {
       return callback();
     });
   },
-
   getDb: function () {
     return dbConnection;
   },
+  connect: async function () {
+    const db = await client.connect();
+    return db.db('exercise');
+  }
 };

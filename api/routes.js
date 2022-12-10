@@ -17,15 +17,8 @@ const findUser = (done, userId) => {
 // Create a New User
 recordRoutes.route('/api/users')
   .get((_, res) => {
-    dbo.connectToServer(function (err) {
-      if (err) {
-        console.error(err);
-        process.exit();
-      }
-    });
-    const dbConnect = dbo.getDb();
-    dbConnect
-      .collection('users')
+    dbo.connect().then(db => {
+      db.collection('users')
       .find({})
       .toArray(function (err, result) {
         if (err) {
@@ -34,6 +27,7 @@ recordRoutes.route('/api/users')
           return res.json(result)
         }
       })
+    })
   })
   .post((req, res) => {
     console.log('POST /api/users')
