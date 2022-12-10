@@ -5,13 +5,13 @@ const dbo = require('./db');
 const recordRoutes = express.Router();
 
 const findUser = (done, userId) => {
-  const dbConnect = dbo.getDb();
-  dbConnect
-    .collection('users')
-    .findOne({ _id: new ObjectId(userId) }, (err, result) => {
-      if (err) done(err)
-      else done(null, result)
-    })
+  dbo.connect().then(db => {
+    db.collection('users')
+      .findOne({ _id: new ObjectId(userId) }, (err, result) => {
+        if (err) done(err)
+        else done(null, result)
+      })
+  })
 }
 
 // Create a New User
@@ -19,35 +19,33 @@ recordRoutes.route('/api/users')
   .get((_, res) => {
     dbo.connect().then(db => {
       db.collection('users')
-      .find({})
-      .toArray(function (err, result) {
-        if (err) {
-          return res.status(400).send('Error fetching users!');
-        } else {
-          return res.json(result)
-        }
-      })
+        .find({})
+        .toArray(function (err, result) {
+          if (err) {
+            return res.status(400).send('Error fetching users!');
+          } else {
+            return res.json(result)
+          }
+        })
     })
   })
   .post((req, res) => {
-    console.log('POST /api/users')
     const username = req.body.username
-    const dbConnect = dbo.getDb();
-    dbConnect
-      .collection('users')
-      .insertOne({ username: username }, (err, result) => {
-        if (err) {
-          return res.status(400).send('Error creating user!');
-        } else {
-          return res.json({ username: username, _id: result.insertedId })
-        }
-      })
+    dbo.connect().then(db => {
+      db.collection('users')
+        .insertOne({ username: username }, (err, result) => {
+          if (err) {
+            return res.status(400).send('Error creating user!');
+          } else {
+            return res.json({ username: username, _id: result.insertedId })
+          }
+        })
+    })
   })
 
 // Add exercises
 recordRoutes.route('/api/users/:_id/exercises')
   .post((req, res) => {
-    console.log('POST /api/users/:_id/exercises')
     const userId = req.params._id
     const description = req.body.description
     const duration = Number(req.body.duration)
@@ -60,33 +58,33 @@ recordRoutes.route('/api/users/:_id/exercises')
       if (isNaN(date))
         return res.json({ error: 'Date must be a valid date' })
     }
-    const dbConnect = dbo.getDb();
     date = date.toDateString()
     findUser((err, user) => {
       if (err) {
         user.status(400).send('Error finding user!');
       } else {
-        dbConnect
-          .collection('exercises')
-          .insertOne({
-            userId: userId,
-            username: user.username,
-            description: description,
-            duration: duration,
-            date: date
-          }, (err, result) => {
-            if (err) {
-              return res.status(400).send('Error creating exercise!');
-            } else {
-              return res.json({
-                _id: userId,
-                username: user.username,
-                description: description,
-                duration: duration,
-                date: date
-              })
-            }
-          })
+        dbo.connect().then(db => {
+          db.collection('exercises')
+            .insertOne({
+              userId: userId,
+              username: user.username,
+              description: description,
+              duration: duration,
+              date: date
+            }, (err, result) => {
+              if (err) {
+                return res.status(400).send('Error creating exercise!');
+              } else {
+                return res.json({
+                  _id: userId,
+                  username: user.username,
+                  description: description,
+                  duration: duration,
+                  date: date
+                })
+              }
+            })
+        })
       }
     }, userId)
   })
@@ -94,7 +92,6 @@ recordRoutes.route('/api/users/:_id/exercises')
 // Get a User's Exercise Log
 recordRoutes.route('/api/users/:_id/logs')
   .get((req, res) => {
-    console.log('GET /api/users/:_id/logs')
     const userId = req.params._id
     const from = new Date(req.query.from)
     const to = new Date(req.query.to)
@@ -103,36 +100,36 @@ recordRoutes.route('/api/users/:_id/logs')
       if (err) {
         return res.status(400).send('Error finding user!');
       } else {
-        const dbConnect = dbo.getDb();
-        dbConnect
-          .collection('exercises')
-          .find({
-            userId: userId
-          }, {
-            date: {
-              $gte: from,
-              $lte: to
-            }
-          })
-          .limit(limit)
-          .toArray(function (err, result) {
-            if (err) {
-              return res.status(400).send('Error fetching exercises!');
-            } else {
-              return res.json({
-                _id: userId,
-                username: user.username,
-                count: result.length,
-                log: result.map(exercise => {
-                  return {
-                    description: exercise.description,
-                    duration: exercise.duration,
-                    date: exercise.date
-                  }
+        dbo.connect().then(db => {
+          db.collection('exercises')
+            .find({
+              userId: userId
+            }, {
+              date: {
+                $gte: from,
+                $lte: to
+              }
+            })
+            .limit(limit)
+            .toArray(function (err, result) {
+              if (err) {
+                return res.status(400).send('Error fetching exercises!');
+              } else {
+                return res.json({
+                  _id: userId,
+                  username: user.username,
+                  count: result.length,
+                  log: result.map(exercise => {
+                    return {
+                      description: exercise.description,
+                      duration: exercise.duration,
+                      date: exercise.date
+                    }
+                  })
                 })
-              })
-            }
-          });
+              }
+            });
+        })
       }
     }, userId)
   })
